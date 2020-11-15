@@ -26,7 +26,10 @@ INIT(7){
 	// TIMER2 используется для ШИМ-сигнала управления усилением
 	TCCR2 = TIMER_CLK_DIV_1 | _BV(WGM20) | _BV(WGM21) | _BV(COM21);
 	// выход ШИМ от 2-го таймера
-	DDR(OC2_PORT) |= OC2_PIN; // выход OC2
+	DDR(GAIN_PORT) |= GAIN_PIN; // выход OC2
+	// усиление микрофона: z-60dB; 0-50dB; 1-40dB
+	DDR(GAIN_PORT) |= MC_GAIN_PIN; // выход переключателя усиления микрофона
+	PORT(GAIN_PORT) |= MC_GAIN_PIN; // усиление микрофона 40dB
 }
 
 /**
@@ -48,7 +51,7 @@ void sens_control(signal_t *s){
 
 	if(cfg.agc_enabled && (s != NULL)){
 		if(s->average_vol < DEF_SILENCE_LVL) {
-			integral = cfg.sensitivity / 0.008;
+			integral = cfg.sensitivity[cfg.input] / 0.008;
 			return;
 		}
 		// automatic - PID
@@ -66,10 +69,10 @@ void sens_control(signal_t *s){
 		float v = error * 0.05 + integral * 0.008;
 		if(v > (MAX_LEVEL-1)) v = MAX_LEVEL - 1;
 		if(v < 0) v = 0;
-		cfg.sensitivity = v;
+		cfg.sensitivity[cfg.input] = v;
 	}
 
-	set_gain(cfg.sensitivity);
+	set_gain(cfg.sensitivity[cfg.input]);
 }
 
 /**

@@ -69,9 +69,9 @@ typedef struct{
 static void change_level(int8_t delta){
 	if(cfg.agc_enabled)
 		return; // при включении АРУ ручное регулирование не работает
-	int8_t lvl = cfg.sensitivity;
+	int8_t lvl = cfg.sensitivity[cfg.input];
 	change_val(&lvl, MAX_LEVEL, delta);
-	cfg.sensitivity = lvl;
+	cfg.sensitivity[cfg.input] = lvl;
 }
 
 /**
@@ -289,7 +289,7 @@ void do_control(signal_t *s){
 		if(do_show || !timeout){
 			if(exer == EXEC_SCALE){
 				show_rpad_str_p(0, VOL_NAME);
-				show_scale(1, cfg.sensitivity);
+				show_scale(1, cfg.sensitivity[cfg.input]);
 			} else {
 				center_str(0, get_effect_name(s));
 				//preset_name = get_preset_name(s);

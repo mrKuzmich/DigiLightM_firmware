@@ -24,6 +24,7 @@
 #include "control.h"
 #include "ir_remote.h"
 #include "menu.h"
+#include "in_switch.h"
 
 /**
  * \defgroup MENU Система меню
@@ -43,30 +44,50 @@
  * световые эффекты работают.
  */
 
-__flash const char VOL_NAME[]		= "SENSITIVITY";
-static __flash const char str2[]	= "A.G.C.";
-static __flash const char str3[]	= "SLEEP TIME";
-static __flash const char str4[]	= "WS2812 IN GROUP";
-static __flash const char str5[]	= "GROUPS OF WS2812";
-static __flash const char str6[]	= "RESET TO DEFAULT";
-static __flash const char str7[]	= "IR REMOTE MENU";
-static __flash const char str8[]	= "DC OFFSET";
+__flash const char VOL_NAME[]	= "SENSITIVITY";
+static __flash const char str1[]		= "ACTIVE INPUT";
+static __flash const char str2[]		= "A.G.C.";
+static __flash const char str3[]		= "SLEEP TIME";
+static __flash const char str4[]		= "LEDS IN GROUP";
+static __flash const char str5[]		= "GROUPS OF LEDS";
+static __flash const char str6[]		= "RESET TO DEFAULT";
+static __flash const char str7[]		= "IR REMOTE MENU";
+static __flash const char str8[]		= "DC OFFSET";
+static __flash const char str9[]		= "MICROPHONE GAIN";
 
-static __flash const char ir0[]		= "POWER OFF";
-static __flash const char ir1[]		= "VOLUME+";
-static __flash const char ir2[]		= "VOLUME-";
-static __flash const char ir3[]		= "EFFECT NEXT";
-static __flash const char ir4[]		= "EFFECT PREV";
-static __flash const char ir5[]		= "PRESET NEXT";
-static __flash const char ir6[]		= "PRESET PREV";
-static __flash const char ir7[]		= "DONE UP LEARNING";
+static __flash const char ir0[]			= "POWER OFF";
+static __flash const char ir1[]			= "VOLUME+";
+static __flash const char ir2[]			= "VOLUME-";
+static __flash const char ir3[]			= "EFFECT NEXT";
+static __flash const char ir4[]			= "EFFECT PREV";
+static __flash const char ir5[]			= "PRESET NEXT";
+static __flash const char ir6[]			= "PRESET PREV";
+static __flash const char ir7[]			= "DONE UP LEARNING";
+
+static __flash const char in0[]			= "ALL OFF";
+static __flash const char in1[]			= "INPUT 1";
+static __flash const char in2[]			= "INPUT 2";
+static __flash const char in3[]			= "MICROPHONE";
+
+static __flash const char* in[]			= {in0, in1, in2, in3};
+
+static __flash const char m_gain0[]		= "40dB";
+static __flash const char m_gain1[]		= "50dB";
+static __flash const char m_gain2[]		= "60dB";
+
+static __flash const char* m_gain[]		= {m_gain0, m_gain1, m_gain2};
+
 
 static void default_setup(void){
 	cfg.pixels_in_group = 1;
 	cfg.group_of_pixels = 96;
 	cfg.time_to_sleep = 0;
-	cfg.sensitivity = 50;
+	for (uint8_t i = 0; i < IN_CNT; i++)
+		cfg.sensitivity[i] = i == OFF ? 0 : // для отключенных входов
+								i == MIC ? 1 : // для микрофонного входа - 40db
+										50; // для обычных входов
 	cfg.agc_enabled = 0;
+	cfg.input = 1;
 }
 
 static void default_ir_setup(void){
@@ -81,7 +102,16 @@ static void default_ir_setup(void){
 }
 
 static EEMEM config_t e_cfg = {
-	.clear = 0xFF
+	.clear = 0xFF /*,
+	.group_of_pixels = 96,
+	.pixels_in_group = 1,
+	.time_to_sleep = 10,
+	.agc_enabled = 0,
+	.lcd_enabled = 1,
+	.dc_offset = 0x7FE0,
+	.input = 1,
+	.colog_order = 0,
+	.sensitivity = {0, 50, 50, 1}*/
 };
 
 void update_config(void){
@@ -92,11 +122,14 @@ INIT(6){
 	// этот модуль обязан инициализировать раньше, чем lcd_show !
 	eeprom_read_block(&cfg, &e_cfg, sizeof(config_t));
 	if(cfg.clear){
+//	if(1){
 		memset(&cfg, 0, sizeof(config_t));
 		default_setup();
+/*
 		cfg.band_mask[0] = BAND_LF;
 		cfg.band_mask[1] = BAND_MF;
-		cfg.band_mask[0] = BAND_HF;
+		cfg.band_mask[0] = BAND_HF; // TODO ???
+*/
 		cfg.dc_offset = 0x7FE0;
 		eeprom_update_block(&cfg, &e_cfg, sizeof(config_t));
 		default_ir_setup();
@@ -105,6 +138,7 @@ INIT(6){
 
 static menu_result_t reset_to_default(uint16_t d){
 	default_setup();
+	update_config();
 	lcd_clrscr();
 	lcd_puts_P("ALL SETTINGS\nRESET TO DEFAULT");
 	_delay_ms(1000);
@@ -208,6 +242,36 @@ static void paint_pix(int32_t d){
 	show_number(*(uint8_t*)(uint16_t)d);
 }
 
+// Меню переключения входа
+static void edit_input(int8_t d, uint16_t data) {
+	uint8_t value = *(uint8_t *)data;
+	value += d;
+	if (value == UINT8_MAX) value = MIC;
+	if (value == IN_CNT) value = OFF;
+	*(uint8_t *)data = value;
+	change_input();
+}
+
+static void paint_input(int32_t d) {
+	center_str_p(1, in[*(uint8_t*)(uint16_t)d]);
+}
+
+// Меню регулировки чувствительности
+static void edit_sensitivity(int8_t d, uint16_t data) {
+
+}
+
+static void paint_sensitivity(int8_t d) {
+
+}
+
+static void edit_mgain(int8_t d, uint16_t data) {
+}
+
+static void paint_mgain(int32_t d) {
+	center_str_p(1, m_gain[*(uint8_t*)(uint16_t)d]);
+}
+
 static menu_result_t update_and_reboot(uint16_t d){
 	update_config();
 	lcd_clrscr();
@@ -231,8 +295,10 @@ static __flash const menu_item_t __flash const ir_menu_items[] = {
 static __flash const menu_t ir_menu = _MENU(ir_menu_items);
 
 static __flash const menu_item_t __flash const main_menu_items[] = {
-	_MI_SCALE(VOL_NAME, cfg.sensitivity, 0, MAX_LEVEL, 1),
+	_MI_SCALE(VOL_NAME, cfg.sensitivity[IN_1], 0, MAX_LEVEL, 1),
+	_MI_USER(str1, edit_input, paint_input, update_and_reboot, &cfg.input),
 	_MI_U8(str3, cfg.time_to_sleep, 0, 60, 5),
+	_MI_USER(str9, edit_mgain, paint_mgain, update_and_reboot, &cfg.sensitivity[MIC]),
 	_MI_ONOFF(str2, cfg.agc_enabled),
 	_MI_USER(str5, edit_pix, paint_pix, update_and_reboot, &cfg.group_of_pixels),
 	_MI_USER(str4, edit_pix, paint_pix, update_and_reboot, &cfg.pixels_in_group),

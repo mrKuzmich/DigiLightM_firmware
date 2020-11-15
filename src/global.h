@@ -10,6 +10,7 @@
 #ifndef EFFECTS_H_
 #define EFFECTS_H_
 #include <stdint.h>
+#include "in_switch.h"
 
 #define MAX_GROUP_OF_PIX		128
 #define MIN_GROUP_OF_PIX		16
@@ -86,11 +87,17 @@ typedef struct {
 	uint8_t		group_of_pixels;	///< количество групп пикселов
 	uint8_t		pixels_in_group;	///< количество пикселов в группе
 	uint8_t		time_to_sleep;		///< время автоотключения
-	uint8_t		sensitivity;		///< уровень регулировки чувствительности
-	uint8_t		agc_enabled;		///< АРУ включено
+	uint8_t		agc_enabled;		///< АРУ включено (номер бита соответствует номеру входа)
 	uint8_t		lcd_enabled;		///< ЖКИ присутствует
-	uint16_t	dc_offset;			///
-	uint16_t	band_mask[BAND_CNT];///< битовые маски полос
+	uint16_t	dc_offset;			/// Настройка постоянной составляющей
+	/// TODO: dc_offset логично завести для каждого входа, поскольку по схеме они каждый имеют собственное смещение
+	uint8_t		input;				///< номер активного входа
+	uint8_t		colog_order;		///< последовательность следования цветовых составляющих
+//	uint8_t		mic_gain;			///< усиление микрофона
+	// mic_gain будет находится в последнем элементе sensitivity
+	uint8_t		sensitivity[IN_CNT];///< уровень регулировки чувствительности (по входам)
+	/// На самом деле sensitivity нужен лишь для входов 1, 2 и mic
+//	uint16_t	band_mask[BAND_CNT];///< битовые маски полос
 } config_t;
 
 extern config_t cfg;
