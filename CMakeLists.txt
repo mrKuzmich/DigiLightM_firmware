@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 # Project name
-project("DigiLight-M" C ASM)
+project("DigiLightM" C ASM)
 
 # Product filename
 set(PRODUCT_NAME ${PROJECT_NAME})
@@ -41,30 +41,23 @@ add_definitions(
     -DF_CPU=${F_CPU}
 )
 # mmcu MUST be passed to bot the compiler and linker, this handle the linker
-set(CMAKE_EXE_LINKER_FLAGS -mmcu=${MCU})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmcu=${MCU} -Wl,-gc-sections -flto")
 
 add_compile_options(
-    -mmcu=${MCU} # MCU
-    -std=gnu99 # C99 standard
-    -Os # optimize
-    -Wall # enable warnings
-    -Wno-main
-    -Wundef
-#    -pedantic
-    -Wstrict-prototypes
-#    -Werror
-    -Wfatal-errors
-    -Wl,--relax,--gc-sections
-    -g
-    -gdwarf-2
-    -funsigned-char # a few optimizations
-    -funsigned-bitfields
-    -fpack-struct
-    -fshort-enums
-    -ffunction-sections
-    -fdata-sections
-    -fno-split-wide-types
-    -fno-tree-scev-cprop
+        -Wall
+        -Os
+        -fpack-struct
+        -fshort-enums
+        -ffunction-sections
+        -fdata-sections
+        -flto
+        -std=gnu99
+        -funsigned-char
+        -funsigned-bitfields
+        -mmcu=${MCU}
+        -DF_CPU=${F_CPU}
+        -MMD
+        -MP
 )
 
 file(GLOB_RECURSE SRC_FILES "src/*.c" "src/*.S") # Load all files in src/** folders
@@ -81,11 +74,13 @@ set_target_properties(${PRODUCT_NAME} PROPERTIES OUTPUT_NAME ${PRODUCT_NAME}.elf
 add_custom_target(strip ALL avr-strip ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
 
 # Transform binary into hex file, we ignore the eeprom segments in the step
-add_custom_target(hex ALL avr-objcopy -R .eeprom -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.hex DEPENDS strip)
+add_custom_target(hex ALL avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.hex DEPENDS strip)
 
 # Transform binary into hex file, this is the eeprom part (empty if you don't
 # use eeprom static variables)
-add_custom_target(eeprom avr-objcopy -j .eeprom  --set-section-flags=.eeprom="alloc,load"  --change-section-lma .eeprom=0 -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.eep DEPENDS strip)
+add_custom_target(eeprom ALL avr-objcopy -j .eeprom  --set-section-flags=.eeprom="alloc,load"  --change-section-lma .eeprom=0 -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.eep DEPENDS strip)
+
+add_custom_target(size ALL avr-size --format=avr --mcu=${MCU} ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME})
 
 # Upload the firmware with avrdude
 add_custom_target(upload ${AVRDUDE} -C ${AVRDUDE_CONF} -c ${AVRDUDE_PROG} -p ${MCU} -U flash:w:${PRODUCT_NAME}.hex DEPENDS hex)
