@@ -18,6 +18,15 @@
 /// номер пина порта АЦП для входного сигнала
 #define ADC_PIN			0
 
+/// Порт переключателя входов
+#define IN_SWITCH_PORT	A
+/// Пин выбора входа 1
+#define IN_1_SEL_PIN	_BV(3)
+/// Пин выбора входа 2
+#define IN_2_SEL_PIN	_BV(4)
+/// Пин выбора входа микрофона
+#define IN_MC_SEL_PIN	_BV(5)
+
 /// Символ порта индикации текущего состояния (отладка)
 #define DEBUG_LED_PORT	A
 #define DEBUG_LED_PIN0	6
@@ -58,16 +67,16 @@
 #define LCD_DATA1_PORT   LCD_PORT     /**< port for 4bit data bit 1 */
 #define LCD_DATA2_PORT   LCD_PORT     /**< port for 4bit data bit 2 */
 #define LCD_DATA3_PORT   LCD_PORT     /**< port for 4bit data bit 3 */
-#define LCD_DATA0_PIN    0            /**< pin for 4bit data bit 0  */
-#define LCD_DATA1_PIN    1            /**< pin for 4bit data bit 1  */
-#define LCD_DATA2_PIN    2            /**< pin for 4bit data bit 2  */
-#define LCD_DATA3_PIN    3            /**< pin for 4bit data bit 3  */
+#define LCD_DATA0_PIN    3            /**< pin for 4bit data bit 0  */
+#define LCD_DATA1_PIN    4            /**< pin for 4bit data bit 1  */
+#define LCD_DATA2_PIN    5            /**< pin for 4bit data bit 2  */
+#define LCD_DATA3_PIN    6            /**< pin for 4bit data bit 3  */
 #define LCD_RS_PORT      LCD_PORT	      /**< port for RS line         */
-#define LCD_RS_PIN       6            /**< pin  for RS line         */
+#define LCD_RS_PIN       0            /**< pin  for RS line         */
 #define LCD_RW_PORT      LCD_PORT     /**< port for RW line         */
-#define LCD_RW_PIN       5            /**< pin  for RW line         */
+#define LCD_RW_PIN       1            /**< pin  for RW line         */
 #define LCD_E_PORT       LCD_PORT     /**< port for Enable line     */
-#define LCD_E_PIN        4            /**< pin  for Enable line     */
+#define LCD_E_PIN        2            /**< pin  for Enable line     */
 
 /// Символ порта, управляющего подсветкой ЖКИ
 #define BKLIGHT_PORT	C
@@ -76,13 +85,15 @@
 
 // ============ PORTD ===============
 /// Символ порта, который используется для регулировки чувствительности - выход ШИМ OC2
-#define OC2_PORT		D
-/// Выход ОС2
-#define OC2_PIN			_BV(7)
+#define GAIN_PORT		D
+/// Выход MC_GAIN
+#define MC_GAIN_PIN		_BV(6)
+/// Выход AGC
+#define GAIN_PIN		_BV(7)
 
 /// Символ порта захвата IR-команд
 #define IR_CAP_PORT			D
 /// Пин захвата IR-команд (ICP)
-#define IR_CAP_PIN		_BV(6)
+#define IR_CAP_PIN		_BV(5)
 
 #endif /* HARDWARE_H_ */
