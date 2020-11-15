@@ -45,9 +45,10 @@ __inline static void send_byte(uint8_t byte){
 void ws2812_show(void){
 	for(uint8_t i=0; i<PIXEL_CNT; i++){
 		for(uint8_t j=0; j<PIXEL_LEN; j++){
+			// TODO добавить порядок цветов
 			// для чипа WS2812 порядок цветовых составляющих должен быть таким:
-			send_byte((pixels[i].g * (pixels[i].bright+1))>>8);	// сначала ЗЕЛЕНЫЙ
 			send_byte((pixels[i].r * (pixels[i].bright+1))>>8);	// затем КРАСНЫЙ
+			send_byte((pixels[i].g * (pixels[i].bright+1))>>8);	// сначала ЗЕЛЕНЫЙ
 			send_byte((pixels[i].b * (pixels[i].bright+1))>>8);	// в конце - СИНИЙ
 		}
 	}
