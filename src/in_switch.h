@@ -15,7 +15,7 @@
 #define _IN_SWITCH_H_
 
 typedef enum {
-	OFF, IN_1, IN_2, MIC,
+	IN_OFF, IN_1, IN_2, IN_MIC,
 	_IN_CNT
 } input_t;
 

@@ -25,6 +25,7 @@
 #include "ir_remote.h"
 #include "menu.h"
 #include "in_switch.h"
+#include "gain_ctrl.h"
 
 /**
  * \defgroup MENU Система меню
@@ -83,8 +84,8 @@ static void default_setup(void){
 	cfg.group_of_pixels = 96;
 	cfg.time_to_sleep = 0;
 	for (uint8_t i = 0; i < IN_CNT; i++)
-		cfg.sensitivity[i] = i == OFF ? 0 : // для отключенных входов
-								i == MIC ? 1 : // для микрофонного входа - 40db
+		cfg.sensitivity[i] = i == IN_OFF ? 0 : // для отключенных входов
+								i == IN_MIC ? 1 : // для микрофонного входа - 40db
 										50; // для обычных входов
 	cfg.agc_enabled = 0;
 	cfg.input = 1;
@@ -246,8 +247,8 @@ static void paint_pix(int32_t d){
 static void edit_input(int8_t d, uint16_t data) {
 	uint8_t value = *(uint8_t *)data;
 	value += d;
-	if (value == UINT8_MAX) value = MIC;
-	if (value == IN_CNT) value = OFF;
+	if (value == UINT8_MAX) value = IN_MIC;
+	if (value == IN_CNT) value = IN_OFF;
 	*(uint8_t *)data = value;
 	change_input();
 }
@@ -258,14 +259,30 @@ static void paint_input(int32_t d) {
 
 // Меню регулировки чувствительности
 static void edit_sensitivity(int8_t d, uint16_t data) {
-
+    if(cfg.input != IN_OFF && cfg.input != IN_MIC) {
+        cfg.sensitivity[cfg.input] += d;
+        if (cfg.sensitivity[cfg.input] <= 0)
+            cfg.sensitivity[cfg.input] = 0;
+        if (cfg.sensitivity[cfg.input] >= MAX_LEVEL)
+            cfg.sensitivity[cfg.input] = MAX_LEVEL;
+    }
 }
 
 static void paint_sensitivity(int8_t d) {
-
+    if(cfg.input == IN_OFF || cfg.input == IN_MIC)
+        center_str_p(1, in[cfg.input]);
+    else
+        show_scale(1, cfg.sensitivity[cfg.input]);
 }
 
+// Меню регулировки чувствительности микрофона
 static void edit_mgain(int8_t d, uint16_t data) {
+    uint8_t value = *(uint8_t *)data;
+    value += d;
+    if (value == UINT8_MAX) value = MG_40DB;
+    if (value > MG_60DB) value = MG_60DB;
+    *(uint8_t *)data = value;
+    change_mgain();
 }
 
 static void paint_mgain(int32_t d) {
@@ -295,11 +312,12 @@ static __flash const menu_item_t __flash const ir_menu_items[] = {
 static __flash const menu_t ir_menu = _MENU(ir_menu_items);
 
 static __flash const menu_item_t __flash const main_menu_items[] = {
-	_MI_SCALE(VOL_NAME, cfg.sensitivity[IN_1], 0, MAX_LEVEL, 1),
+//	_MI_SCALE(VOL_NAME, cfg.sensitivity[IN_1], 0, MAX_LEVEL, 1),
+    _MI_USER(VOL_NAME, edit_sensitivity, paint_sensitivity, update_and_reboot, &cfg.input),
 	_MI_USER(str1, edit_input, paint_input, update_and_reboot, &cfg.input),
-	_MI_U8(str3, cfg.time_to_sleep, 0, 60, 5),
-	_MI_USER(str9, edit_mgain, paint_mgain, update_and_reboot, &cfg.sensitivity[MIC]),
+	_MI_USER(str9, edit_mgain, paint_mgain, update_and_reboot, &cfg.sensitivity[IN_MIC]),
 	_MI_ONOFF(str2, cfg.agc_enabled),
+    _MI_U8(str3, cfg.time_to_sleep, 0, 60, 5),
 	_MI_USER(str5, edit_pix, paint_pix, update_and_reboot, &cfg.group_of_pixels),
 	_MI_USER(str4, edit_pix, paint_pix, update_and_reboot, &cfg.pixels_in_group),
 	_MI_USER(str8, edit_dc, paint_dc, update_and_reboot, &music),
