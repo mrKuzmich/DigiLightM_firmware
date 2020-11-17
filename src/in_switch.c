@@ -24,7 +24,7 @@ void _set_input(void) {
 	case IN_2:
 		PORT(IN_SWITCH_PORT) = tmp | IN_2_SEL_PIN;
 		break;
-	case MIC:
+	case IN_MIC:
 		PORT(IN_SWITCH_PORT) = tmp | IN_MC_SEL_PIN;
 		break;
 	default: /// при всех прочих - IN_1,
