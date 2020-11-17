@@ -52,8 +52,7 @@ static const __flash  uint8_t chanel[CHANEL_CNT] = {
 		F_DC, F_250_HZ, F_1500_HZ, F_2300_HZ, F_3300_HZ, F_3800_HZ};
 
 static __flash const rgb_t color[CHANEL_CNT] = {
-		{0xFF,0x0F,0x00},{RED},{GREEN},{ORANGE},{BLUE},{PURPLE},{RED},{YELLOW},{GREEN},{ORANGE},{BLUE},{PURPLE},{RED},{YELLOW},{GREEN},{ORANGE}
-};
+		{0xFF,0x0F,0x00},{RED},{GREEN},{ORANGE},{BLUE},{PURPLE}};
 
 typedef struct{
 	uint16_t	level;
