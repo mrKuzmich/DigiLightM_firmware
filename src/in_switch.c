@@ -27,7 +27,8 @@ void _set_input(void) {
 	case MIC:
 		PORT(IN_SWITCH_PORT) = tmp | IN_MC_SEL_PIN;
 		break;
-	default: /// при всех прочих - IN_1
+	default: /// при всех прочих - IN_1,
+             /// даже если ALL_OFF, при этом включен будет IN_1 и sensitivity будет 0
 		PORT(IN_SWITCH_PORT) = tmp | IN_1_SEL_PIN;
 	}
 }
