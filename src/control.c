@@ -41,7 +41,7 @@
  * @param lim непересекаемая граница значения
  * @param d шаг изменения значения
  */
-static void change_val(int8_t *v, uint8_t lim, int8_t d){
+void change_val(int8_t *v, uint8_t lim, int8_t d){
 	int16_t tmp = *v;
 	tmp += d;
 	if(tmp >= lim) tmp = lim-1;

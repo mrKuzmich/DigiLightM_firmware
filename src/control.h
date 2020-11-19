@@ -74,6 +74,7 @@ typedef enum{
 	CMD_CNT
 } control_cmd_t;
 
+void change_val(int8_t *v, uint8_t lim, int8_t d);
 /// получение кода нажатых кнопок
 uint8_t get_btn_state(void);
 /// получение управляющей команды
