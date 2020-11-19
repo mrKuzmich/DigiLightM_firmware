@@ -39,23 +39,30 @@ __inline static void send_byte(uint8_t byte){
 	}
 }
 
-/** Обновление содержимого цепочки светодиодов WS2812
- *
+/**
+ * Обновление содержимого цепочки светодиодов WS2812
  */
 void ws2812_show(void){
 	for(uint8_t i=0; i<PIXEL_CNT; i++){
 		for(uint8_t j=0; j<PIXEL_LEN; j++){
-			// TODO добавить порядок цветов
-			// для чипа WS2812 порядок цветовых составляющих должен быть таким:
-			send_byte((pixels[i].r * (pixels[i].bright+1))>>8);	// затем КРАСНЫЙ
-			send_byte((pixels[i].g * (pixels[i].bright+1))>>8);	// сначала ЗЕЛЕНЫЙ
-			send_byte((pixels[i].b * (pixels[i].bright+1))>>8);	// в конце - СИНИЙ
+		    for(uint8_t c_s = color_sequence[cfg.color_order]; c_s; c_s >>= 2) {
+                switch (c_s & COLOR_MASK) {
+                    case C_R:
+                        send_byte((pixels[i].r * (pixels[i].bright+1))>>8);	// КРАСНЫЙ
+                        break;
+                    case C_G:
+                        send_byte((pixels[i].g * (pixels[i].bright+1))>>8);	// ЗЕЛЕНЫЙ
+                        break;
+                    case C_B:
+                        send_byte((pixels[i].b * (pixels[i].bright+1))>>8);	// СИНИЙ
+                }
+		    }
 		}
 	}
 }
 
-/** Инициализация аппаратного SPI
- *
+/**
+ * Инициализация аппаратного SPI
  */
 INIT(7){
 	DDR(PORT_SPI) |= _BV(PIN_MOSI) | _BV(PIN_SS) | _BV(PIN_SCK);

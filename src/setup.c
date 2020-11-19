@@ -26,6 +26,7 @@
 #include "menu.h"
 #include "in_switch.h"
 #include "gain_ctrl.h"
+#include "ws2812.h"
 
 /**
  * \defgroup MENU Система меню
@@ -55,6 +56,7 @@ static __flash const char str6[]		= "RESET TO DEFAULT";
 static __flash const char str7[]		= "IR REMOTE MENU";
 static __flash const char str8[]		= "DC OFFSET";
 static __flash const char str9[]		= "MICROPHONE GAIN";
+static __flash const char strA[]		= "COLORS ORDER";
 
 static __flash const char ir0[]			= "POWER OFF";
 static __flash const char ir1[]			= "VOLUME+";
@@ -111,7 +113,7 @@ static EEMEM config_t e_cfg = {
 	.lcd_enabled = 1,
 	.dc_offset = 0x7FE0,
 	.input = 1,
-	.colog_order = 0,
+	.color_order = 0,
 	.sensitivity = {0, 50, 50, 1}*/
 };
 
@@ -268,7 +270,7 @@ static void edit_sensitivity(int8_t d, uint16_t data) {
     }
 }
 
-static void paint_sensitivity(int8_t d) {
+static void paint_sensitivity(int32_t d) {
     if(cfg.input == IN_OFF || cfg.input == IN_MIC)
         center_str_p(1, in[cfg.input]);
     else
@@ -277,17 +279,35 @@ static void paint_sensitivity(int8_t d) {
 
 // Меню регулировки чувствительности микрофона
 static void edit_mgain(int8_t d, uint16_t data) {
-    uint8_t value = *(uint8_t *)data;
-    value += d;
-    if (value == UINT8_MAX) value = MG_40DB;
-    if (value > MG_60DB) value = MG_60DB;
-    *(uint8_t *)data = value;
+    change_val((int8_t *)data, _MG_COUNT, d);
     change_mgain();
 }
 
 static void paint_mgain(int32_t d) {
 	center_str_p(1, m_gain[*(uint8_t*)(uint16_t)d]);
 }
+
+// Настройка порядка следования цветов
+static void edit_order(int8_t d, uint16_t data) {
+    change_val((int8_t *)data, COLOR_SEQ_COUNT, d);
+}
+
+static void paint_order(int32_t d) {
+    lcd_gotoxy(0,1);
+    for(uint8_t c_s = color_sequence[cfg.color_order]; c_s; c_s >>= 2) {
+        switch (c_s & COLOR_MASK) {
+            case C_R:
+                lcd_puts_P("R");
+                break;
+            case C_G:
+                lcd_puts_P("G");
+                break;
+            case C_B:
+                lcd_puts_P("B");
+        }
+    }
+}
+
 
 static menu_result_t update_and_reboot(uint16_t d){
 	update_config();
@@ -320,6 +340,7 @@ static __flash const menu_item_t __flash const main_menu_items[] = {
     _MI_U8(str3, cfg.time_to_sleep, 0, 60, 5),
 	_MI_USER(str5, edit_pix, paint_pix, update_and_reboot, &cfg.group_of_pixels),
 	_MI_USER(str4, edit_pix, paint_pix, update_and_reboot, &cfg.pixels_in_group),
+    _MI_USER(strA, edit_order, paint_order, update_and_reboot, &cfg.color_order),
 	_MI_USER(str8, edit_dc, paint_dc, update_and_reboot, &music),
 	_MI_SUBMENU(str7, ir_menu),
 	_MI_USER(str6, NULL, show_press_encoder_msg, reset_to_default,0)
