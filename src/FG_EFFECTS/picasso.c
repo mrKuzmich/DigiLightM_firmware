@@ -37,9 +37,10 @@ static flash_effect_t effect_def = {
 	.work	= _effect	// это значение не может быть NULL!
 };
 
+// ќ“ Ћё„≈Ќќ ƒќ ¬џя—Ќ≈Ќ»я
 INIT(7){
 	// регистраци€ эффекта - правильно указать тип эффекта!
-	register_effect(FOREGROUND_EFFECT, &effect_def);
+	//register_effect(FOREGROUND_EFFECT, &effect_def);
 }
 
 #define PIC_SZ			4
@@ -111,7 +112,7 @@ static void make_picture(uint8_t f, uint16_t peak){
 }
 
 static void paint2(signal_t *s){
-	static uint8_t wait[32];
+	static uint8_t wait[32]; // TODO вылетает за пределы массива, нужен динамический маччив
 
 	for(uint8_t i=0; i<PIXEL_CNT; i++){
 		if(wait[i])
