@@ -39,6 +39,8 @@ __inline static void send_byte(uint8_t byte){
 	}
 }
 
+const char color_sequence[COLOR_SEQ_COUNT] = {S_RGB, S_RBG, S_BRG, S_BGR, S_GBR, S_GRB};
+
 /**
  * ќбновление содержимого цепочки светодиодов WS2812
  */
