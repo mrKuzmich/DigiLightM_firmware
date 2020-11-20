@@ -32,7 +32,7 @@
 #define COLOR_SEQ_COUNT 6
 #define COLOR_MASK  0b00000011
 
-static uint8_t color_sequence[] = {S_RGB, S_RBG, S_BRG, S_BGR, S_GBR, S_GRB};
+const static uint8_t color_sequence[] = {S_RGB, S_RBG, S_BRG, S_BGR, S_GBR, S_GRB};
 
 /// обновление ленты светододов
 void ws2812_show(void);
