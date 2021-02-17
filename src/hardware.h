@@ -87,13 +87,13 @@
 /// Символ порта, который используется для регулировки чувствительности - выход ШИМ OC2
 #define GAIN_PORT		D
 /// Выход MC_GAIN
-#define MC_GAIN_PIN		_BV(6)
+#define MC_GAIN_PIN		_BV(5)
 /// Выход AGC
 #define GAIN_PIN		_BV(7)
 
 /// Символ порта захвата IR-команд
 #define IR_CAP_PORT			D
 /// Пин захвата IR-команд (ICP)
-#define IR_CAP_PIN		_BV(5)
+#define IR_CAP_PIN		_BV(6)
 
 #endif /* HARDWARE_H_ */
