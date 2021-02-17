@@ -43,7 +43,7 @@
 #include "sd_script.h"
 
 /// предельное количество эффектов любого типа
-#define MAX_EFFECT_CNT		5
+#define MAX_EFFECT_CNT		6
 /// фоновый эффект
 #define BACKGROUND_EFFECT	0
 /// основной эффект
