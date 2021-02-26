@@ -21,7 +21,7 @@ typedef struct{
 /// Заглушка "нет команды"
 #define IR_NO_CMD	0xFFFFFFFF
 /// Количество сохраняемых команд в EEPROM
-#define TOTAL_STORED_IR_CMD	7
+#define TOTAL_STORED_IR_CMD	8
 
 /// получение кода ДУ
 uint32_t get_ir_code(void);

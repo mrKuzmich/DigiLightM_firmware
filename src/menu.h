@@ -15,6 +15,8 @@
 #define MENU_H_
 
 extern __flash const char VOL_NAME[];
+extern __flash const char STR_SOURCE[];
+extern __flash const char *in[];
 
 extern uint8_t lock_current_menu_item;
 

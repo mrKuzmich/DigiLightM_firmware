@@ -49,6 +49,20 @@ void change_val(int8_t *v, uint8_t lim, int8_t d){
 	*v = tmp;
 }
 
+/**
+ * Циклическое изменение однобайтной переменной с ограничением значений.
+ * @param v изменяемая переменная
+ * @param lim непересекаемая граница значения
+ * @param d шаг изменения значения
+ */
+void change_val_ciclic(int8_t *v, uint8_t lim, int8_t d){
+    int16_t tmp = *v;
+    tmp += d;
+    if(tmp >= lim) tmp = 0;
+    if(tmp < 0) tmp = lim - 1;
+    *v = tmp;
+}
+
 /// Флаги автомата состояния опроса кнопок
 enum button_state{
 	BTN_WAIT_RELEASED,	///< Ожидание отпускания кнопки
@@ -189,7 +203,8 @@ static control_cmd_t get_command(control_t ctrl){
 typedef enum{
 	EXEC_NO_SHOW,	// ничего не обновлять на ЖКИ
 	EXEC_SHOW,		// обновить ЖКИ в текущем режиме
-	EXEC_SCALE		// показать шкалу чувствительности на ЖКИ
+	EXEC_SCALE,		// показать шкалу чувствительности на ЖКИ
+	EXEC_SOURCE     // показать источник сигнала
 } exec_result_t;
 
 /**
@@ -218,6 +233,7 @@ static exec_result_t exec_cmd(signal_t *s){
 		break;
 	case CMD_EFFECT_MINUS:
 		change_effect(s, -1);
+        break;
 #if !defined(ONLY_BASE_CMD)
 	case CMD_EFFECT_1 ... CMD_EFFECT_10:
 		// TODO выбор конкретного эффекта
@@ -239,7 +255,12 @@ static exec_result_t exec_cmd(signal_t *s){
 	case CMD_SETUP:
 		in_menu = 1;
 		break;
-	default:
+    case CMD_SOURCE_SELECT:
+        change_val_ciclic(&cfg.input, IN_CNT, 1);
+        change_input();
+        result = EXEC_SOURCE;
+        break;
+    default:
 		result = EXEC_NO_SHOW;
 	}
 
@@ -290,6 +311,10 @@ void do_control(signal_t *s){
 			if(exer == EXEC_SCALE){
 				show_rpad_str_p(0, VOL_NAME);
 				show_scale(1, cfg.sensitivity[cfg.input]);
+			} else if(exer == EXEC_SOURCE) {
+			    // если изменяется источник, отобразим это
+                show_rpad_str_p(0, STR_SOURCE);
+                center_str_p(1, in[cfg.input]);
 			} else {
 				center_str(0, get_effect_name(s));
 				//preset_name = get_preset_name(s);

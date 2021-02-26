@@ -45,6 +45,7 @@ typedef enum{
 	CMD_EFFECT_MINUS,
 	CMD_PRESET_PLUS,
 	CMD_PRESET_MINUS,
+	CMD_SOURCE_SELECT,
 	CMD_POWER,
 #if !defined(ONLY_BASE_CMD)
 	// опциональные команды

@@ -47,7 +47,7 @@
  */
 
 __flash const char VOL_NAME[] = "SENSITIVITY";
-static __flash const char str1[] = "ACTIVE INPUT";
+__flash const char STR_SOURCE[] = "SOURCE";
 static __flash const char str2[] = "A.G.C.";
 static __flash const char str3[] = "SLEEP TIME";
 static __flash const char str4[] = "LEDS IN GROUP";
@@ -65,14 +65,15 @@ static __flash const char ir3[] = "EFFECT NEXT";
 static __flash const char ir4[] = "EFFECT PREV";
 static __flash const char ir5[] = "PRESET NEXT";
 static __flash const char ir6[] = "PRESET PREV";
-static __flash const char ir7[] = "DONE UP LEARNING";
+static __flash const char ir7[] = "SOURCE SELECT";
+static __flash const char ir8[] = "DONE UP LEARNING";
 
 static __flash const char in0[] = "ALL OFF";
 static __flash const char in1[] = "INPUT 1";
 static __flash const char in2[] = "INPUT 2";
 static __flash const char in3[] = "MICROPHONE";
 
-static __flash const char *in[] = {in0, in1, in2, in3};
+__flash const char *in[] = {in0, in1, in2, in3};
 
 static __flash const char m_gain0[] = "40dB";
 static __flash const char m_gain1[] = "50dB";
@@ -102,7 +103,8 @@ static void default_ir_setup(void) {
     init_ir_cmd_code(3, CMD_EFFECT_MINUS, IR_CH_MINUS);
     init_ir_cmd_code(4, CMD_PRESET_PLUS, IR_NEXT);
     init_ir_cmd_code(5, CMD_PRESET_MINUS, IR_PREV);
-    init_ir_cmd_code(6, CMD_POWER, IR_NO_CMD);
+    init_ir_cmd_code(6, CMD_SOURCE_SELECT, IR_CH);
+    init_ir_cmd_code(7, CMD_POWER, IR_NO_CMD);
 }
 
 static EEMEM config_t e_cfg = {
@@ -316,7 +318,8 @@ __flash const ir_menu_items[] = {
         _MI_USER(ir4, NULL, ir_paint, ir_action, CMD_EFFECT_MINUS),
         _MI_USER(ir5, NULL, ir_paint, ir_action, CMD_PRESET_PLUS),
         _MI_USER(ir6, NULL, ir_paint, ir_action, CMD_PRESET_MINUS),
-        _MI_USER(ir7, NULL, show_press_encoder_msg, NULL, 0),
+        _MI_USER(ir7, NULL, ir_paint, ir_action, CMD_SOURCE_SELECT),
+        _MI_USER(ir8, NULL, show_press_encoder_msg, NULL, 0),
         _MI_USER(str6, NULL, show_press_encoder_msg, ir_action_reset, 0)
 };
 
@@ -327,7 +330,7 @@ static __flash const menu_item_t
 __flash const main_menu_items[] = {
 //	_MI_SCALE(VOL_NAME, cfg.sensitivity[IN_1], 0, MAX_LEVEL, 1),
         _MI_USER(VOL_NAME, edit_sensitivity, paint_sensitivity, update_and_reboot, &cfg.input),
-        _MI_USER(str1, edit_input, paint_input, update_and_reboot, &cfg.input),
+        _MI_USER(STR_SOURCE, edit_input, paint_input, update_and_reboot, &cfg.input),
         _MI_USER(str9, edit_mgain, paint_mgain, update_and_reboot, &cfg.sensitivity[IN_MIC]),
         _MI_ONOFF(str2, cfg.agc_enabled),
         _MI_U8(str3, cfg.time_to_sleep, 0, 60, 5),
