@@ -31,17 +31,21 @@ set(L_FUSE 0xBF)
 #set(LOCK_BIT 0xff)
 
 # Use AVR GCC toolchain
+#find_program(AVR_GCC l_avr_gcc ${CMAKE_SOURCE_DIR})
+find_program(AVR_GCC avr_gcc ${CMAKE_SOURCE_DIR})
+find_program(AVR_CXX avr-g++)
+
 set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_CXX_COMPILER avr-g++)
-set(CMAKE_C_COMPILER avr-gcc)
-set(CMAKE_ASM_COMPILER avr-gcc)
+set(CMAKE_CXX_COMPILER ${AVR_CXX})
+set(CMAKE_C_COMPILER ${AVR_GCC})
+set(CMAKE_ASM_COMPILER ${AVR_GCC})
 
 # Pass defines to compiler
 add_definitions(
     -DF_CPU=${F_CPU}
 )
 # mmcu MUST be passed to bot the compiler and linker, this handle the linker
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmcu=${MCU} -Wl,-gc-sections -flto")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmcu=${MCU} -Wl,-gc-sections -flto -Wl,-Map,${PRODUCT_NAME}.map")
 
 add_compile_options(
         -Wall
@@ -75,6 +79,7 @@ add_custom_target(strip ALL avr-strip ${PRODUCT_NAME}.elf DEPENDS ${PRODUCT_NAME
 
 # Transform binary into hex file, we ignore the eeprom segments in the step
 add_custom_target(hex ALL avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.hex DEPENDS strip)
+add_custom_target(bin ALL avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O binary ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.bin DEPENDS strip)
 
 # Transform binary into hex file, this is the eeprom part (empty if you don't
 # use eeprom static variables)
