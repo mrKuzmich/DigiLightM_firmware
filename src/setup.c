@@ -27,6 +27,7 @@
 #include "in_switch.h"
 #include "gain_ctrl.h"
 #include "ws2812.h"
+#include "pixel.h"
 
 /**
  * \defgroup MENU Система меню
@@ -140,6 +141,7 @@ INIT(6) {
         eeprom_update_block(&cfg, &e_cfg, sizeof(config_t));
         default_ir_setup();
     }
+    init_pix_arr(MAX_TOTAL_PIX);
 }
 
 static menu_result_t reset_to_default(uint16_t d) {
@@ -272,7 +274,7 @@ static void paint_sensitivity(int32_t d) {
 
 // Меню регулировки чувствительности микрофона
 static void edit_mgain(int8_t d, uint16_t data) {
-    change_val((int8_t *) data, _MG_COUNT, d);
+    change_val((uint8_t *) data, _MG_COUNT, d);
     change_mgain();
 }
 
@@ -282,7 +284,7 @@ static void paint_mgain(int32_t d) {
 
 // Настройка порядка следования цветов
 static void edit_order(int8_t d, uint16_t data) {
-    change_val((int8_t *) data, COLOR_SEQ_COUNT, d);
+    change_val((uint8_t *) data, COLOR_SEQ_COUNT, d);
 }
 
 static void paint_order(int32_t d) {
@@ -307,6 +309,11 @@ static menu_result_t update_and_reboot(uint16_t d) {
     lcd_puts_P("ALL SETTINGS\nSAVED");
     _delay_ms(1000);
     return MENU_DONE;
+}
+
+static menu_result_t update_pixels_size(uint16_t d) {
+    init_pix_arr(PIXEL_CNT);
+    return update_and_reboot(d);
 }
 
 static __flash const menu_item_t
@@ -334,7 +341,7 @@ __flash const main_menu_items[] = {
         _MI_USER(str9, edit_mgain, paint_mgain, update_and_reboot, &cfg.sensitivity[IN_MIC]),
         _MI_ONOFF(str2, cfg.agc_enabled),
         _MI_U8(str3, cfg.time_to_sleep, 0, 60, 5),
-        _MI_USER(str5, edit_pix, paint_pix, update_and_reboot, &cfg.group_of_pixels),
+        _MI_USER(str5, edit_pix, paint_pix, update_pixels_size, &cfg.group_of_pixels),
         _MI_USER(str4, edit_pix, paint_pix, update_and_reboot, &cfg.pixels_in_group),
         _MI_USER(strA, edit_order, paint_order, update_and_reboot, &cfg.color_order),
         _MI_USER(str8, edit_dc, paint_dc, update_and_reboot, &music),

@@ -19,7 +19,7 @@
 #include "pixel.h"
 
 /// Массив пикселей предельного размера
-pixel_t	pixels[MAX_TOTAL_PIX];
+pixel_t	*pixels;
 
 /// Массив предопределенных цветов
 static const
@@ -40,6 +40,18 @@ static void fade_out(pixel_t *px){
 		else
 			px->bright = 0;
 	}
+}
+
+
+void init_pix_arr(uint8_t size) {
+    uint16_t length = size * sizeof(pixel_t);
+    if (pixels) {
+        pixel_t *tmp;
+        tmp = realloc(pixels, length);
+        if (tmp)
+            pixels = tmp;
+    } else
+        pixels = malloc(length);
 }
 
 /**

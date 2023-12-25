@@ -67,7 +67,7 @@ typedef struct pixel_t{
 /// Условная скорость автоматического изменения яркости (чем больше, тем медленнее)
 #define FADE_DIV	5
 /// массив пикселей
-extern pixel_t pixels[];
+extern pixel_t *pixels;
 
 #define RND_PIX_DELTA	3
 
@@ -77,6 +77,7 @@ typedef enum rnd_pix_t {
 	RND_PIX_FADE_OUT = RND_PIX_DELTA
 } rnd_pix_t;
 
+void init_pix_arr(uint8_t size);
 /// Автоматическое изменение яркости всех пикселов
 void fade(void);
 /// Случайный пиксел
