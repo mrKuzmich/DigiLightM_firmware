@@ -41,7 +41,7 @@
  * @param lim непересекаема€ граница значени€
  * @param d шаг изменени€ значени€
  */
-void change_val(int8_t *v, uint8_t lim, int8_t d){
+void change_val(uint8_t *v, uint8_t lim, int8_t d){
 	int16_t tmp = *v;
 	tmp += d;
 	if(tmp >= lim) tmp = lim-1;
@@ -55,7 +55,7 @@ void change_val(int8_t *v, uint8_t lim, int8_t d){
  * @param lim непересекаема€ граница значени€
  * @param d шаг изменени€ значени€
  */
-void change_val_ciclic(int8_t *v, uint8_t lim, int8_t d){
+void change_val_ciclic(uint8_t *v, uint8_t lim, int8_t d){
     int16_t tmp = *v;
     tmp += d;
     if(tmp >= lim) tmp = 0;
@@ -83,7 +83,7 @@ typedef struct{
 static void change_level(int8_t delta){
 	if(cfg.agc_enabled)
 		return; // при включении ј–” ручное регулирование не работает
-	int8_t lvl = cfg.sensitivity[cfg.input];
+	uint8_t lvl = cfg.sensitivity[cfg.input];
 	change_val(&lvl, MAX_LEVEL, delta);
 	cfg.sensitivity[cfg.input] = lvl;
 }
