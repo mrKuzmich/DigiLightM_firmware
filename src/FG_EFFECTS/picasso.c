@@ -34,13 +34,14 @@ static __flash const char _name[] = "PICASSO";
 // отсутствующие функции на NULL
 static flash_effect_t effect_def = {
 	.name	= _name,
-	.work	= _effect	// это значение не может быть NULL!
+	.work	= _effect,	// это значение не может быть NULL!
+    .stop = _stop
 };
 
 // ќ“ Ћё„≈Ќќ ƒќ ¬џя—Ќ≈Ќ»я
 INIT(7){
 	// регистраци€ эффекта - правильно указать тип эффекта!
-	//register_effect(FOREGROUND_EFFECT, &effect_def);
+	register_effect(FOREGROUND_EFFECT, &effect_def);
 }
 
 #define PIC_SZ			4
@@ -63,6 +64,9 @@ typedef struct{
 } delta_t;
 
 static delta_t delta[HARM];
+static uint8_t wait_length = 0;
+static uint8_t *wait;
+
 
 uint16_t rand_range(uint16_t range){
 	return rand() % range;
@@ -111,8 +115,21 @@ static void make_picture(uint8_t f, uint16_t peak){
 	}
 }
 
+void init_wait_array(uint8_t size) {
+    if (wait_length == size) return;
+    uint16_t length = size * sizeof(uint8_t);
+    if (wait) {
+        uint8_t *tmp;
+        tmp = realloc(wait, length);
+        if (tmp)
+            wait = tmp;
+    } else
+        wait = malloc(length);
+    wait_length = size;
+}
+
 static void paint2(signal_t *s){
-	static uint8_t wait[32]; // TODO вылетает за пределы массива, нужен динамический маччив
+    init_wait_array(PIXEL_CNT);
 
 	for(uint8_t i=0; i<PIXEL_CNT; i++){
 		if(wait[i])
@@ -143,6 +160,10 @@ static void paint2(signal_t *s){
 		set_hsv_color(pix, color);
 		bright_ctrl(pix, 255, 1);
 	}
+}
+
+static void _stop(void) {
+    free(wait);
 }
 
 // главна€ функци€ эффекта - вызываетс€ 100 раз в секунду дл€ рендеринга
