@@ -7,7 +7,7 @@
  * \brief Модификации цветов
  *
  * Для WS2812 принята цветовая модель RGB, но для получения оттенков спектра,
- * особенно плавно меняющихся, удобнее применять моедель HSV.
+ * особенно плавно меняющихся, удобнее применять модель HSV.
  * \addtogroup COLOR
  * @{
  */
@@ -16,6 +16,12 @@
 #define COLOR_TRANSFORM_H_
 
 #define HSV_GRADE	360
+
+#if (HSV_GRADE > 256)
+typedef uint16_t h_type;
+#else
+typedef uint8_t h_type;
+#endif
 
 /// Тип для представления цвета в RGB-модели
 typedef struct rgb_t {
@@ -33,6 +39,7 @@ typedef struct hsv_t {
 
 void rgb_to_hsv(rgb_t *src, hsv_t *dst);
 void hsv_to_rgb(hsv_t *src, rgb_t *dst);
+void rgb_from_hue(h_type h, rgb_t *dst);
 
 /**
  * @}

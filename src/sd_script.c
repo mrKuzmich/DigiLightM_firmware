@@ -30,6 +30,7 @@
 #include <util/delay.h>
 #include "PFFS/pff.h"
 #include "sd_script.h"
+#include "script_str.h"
 #if !defined(DISABLE_SD_SCRIPT)
 /**
  * @{
@@ -41,6 +42,8 @@
 #define leave_sd_mode()		do { SPCR = _BV(SPE) | _BV(MSTR) | _BV(CPHA); SPDR=0;  while(!(SPSR & (1<<SPIF))); PORT(WS_LOCK_PORT) |= WS_LOCK_PIN; } while(0)
 
 #define MODULE_NAME		"SCRIPT PLAYER"
+
+#define cmd_is(s) (strncmp_P(cmd, PSTR(s), sizeof(s)-1) == 0)
 
 static __flash const char _name[] = MODULE_NAME;
 
@@ -76,8 +79,12 @@ static script_result_t	script_open(script_t *s, uint16_t id);
 
 /// считывание строки из файла в буфер
 static script_result_t script_read_str(script_t *s, char *str);
+static uint8_t get_script_digit(char *str);
 static script_result_t script_seek(script_t *s, uint32_t pos);
 static void script_exec(signal_t *s);
+static char* skip_cmd(char *s);
+static char* get_cmd(char *s);
+
 
 static int8_t select_next = 0;
 
@@ -350,25 +357,25 @@ static uint8_t execute_cmd(char *cmd){
 			tmp = get_script_val(cmd+3);
 			if(tmp > 255) break;
 			// если параметр валидный - разбираем команду
-			if(strncmp_P(cmd, PSTR("PB"), 2) == 0){
+			if(cmd_is(CMD_PB)){
 				// яркость
 				param.bright = tmp;
 
-			} else if(strncmp_P(cmd, PSTR("GB"), 2) == 0){
+			} else if(cmd_is(CMD_GB)){
 				// глобальная яркость
 				for(uint8_t i=0; i<PIXEL_CNT; i++)
 					pixels[i].bright = tmp;
 
-			} else if(strncmp_P(cmd, PSTR("PF"), 2) == 0){
+			} else if(cmd_is(CMD_PF)){
 				// затухание
 				param.fade = tmp;
 
-			} else if(strncmp_P(cmd, PSTR("GF"), 2) == 0){
+			} else if(cmd_is(CMD_GF)){
 				// глобальное затухание
 				for(uint8_t i=0; i<PIXEL_CNT; i++)
 					pixels[i].delta = tmp;
 
-			} else if(strncmp_P(cmd, PSTR("PC"), 2) == 0){
+			} else if(cmd_is(CMD_PC)){
 				// цвет
 				uint16_t tmp2 = get_script_val(cmd+5);
 				uint16_t tmp3 = get_script_val(cmd+7);
@@ -377,15 +384,25 @@ static uint8_t execute_cmd(char *cmd){
 				param.color.g = tmp2;
 				param.color.b = tmp3;
 
-			} else if(strncmp_P(cmd, PSTR("GC"), 2) == 0){
+			} else if(cmd_is(CMD_GC)){
 				// цвет глобально
 				uint16_t tmp2 = get_script_val(cmd+5);
 				uint16_t tmp3 = get_script_val(cmd+7);
 				if((tmp2 > 255) || (tmp3 > 255)) break;
 				for(uint8_t i=0; i<PIXEL_CNT; i++)
 					set_rgb_color(i, tmp, tmp2, tmp3);
-
-			} else if(strncmp_P(cmd, PSTR("PM"), 2) == 0){
+			} else if(cmd_is(CMD_GI)){
+                // глобальный цвет по индексу
+                rgb_t rgb;
+                rgb_from_hue(tmp, &rgb);
+                for(uint8_t i=0; i<PIXEL_CNT; i++)
+                    pixels[i].rgb = rgb;
+            } else if(cmd_is(CMD_PI)){
+                // цвет рисования по индексу
+                rgb_t rgb;
+                rgb_from_hue(tmp, &rgb);
+                param.color = rgb;
+            } else if(cmd_is(CMD_PM)){
 				// карта пикселов
 				char *ptr = cmd+5;
 				while(tmp <= 255){
@@ -401,15 +418,39 @@ static uint8_t execute_cmd(char *cmd){
 					tmp = get_script_val(ptr);
 					ptr += 2;
 				}
+			} else if(cmd_is(CMD_BM)){
+                // карта яркости
+                char *ptr = cmd+5;
+                while(tmp <= 255){
+                    if(tmp < PIXEL_CNT){
+                        if(param.rev) tmp = PIXEL_CNT - tmp - 1;
+                        // только для допустимого номера пиксела
+                        pixels[tmp].bright = param.bright;
+                    } // недопустимые номера пикселов игнорируются без прекращения парсинга
+                    tmp = get_script_val(ptr);
+                    ptr += 2;
+                }
 
-			} else if(strncmp_P(cmd, PSTR("WT"), 2) == 0){
+            } else if(cmd_is(CMD_FM)){
+                // карта яркости
+                char *ptr = cmd+5;
+                while(tmp <= 255){
+                    if(tmp < PIXEL_CNT){
+                        if(param.rev) tmp = PIXEL_CNT - tmp - 1;
+                        // только для допустимого номера пиксела
+                        pixels[tmp].delta = param.fade;
+                    } // недопустимые номера пикселов игнорируются без прекращения парсинга
+                    tmp = get_script_val(ptr);
+                    ptr += 2;
+                }
+            } else if(cmd_is(CMD_WT)) {
 				// задержка
 				return tmp;
 
 			}
 		}
 		// проверка на команду конца цикла
-		if(strncmp_P(cmd, PSTR("LV"), 2) == 0){
+		if(cmd_is(CMD_LV)){
 			// номер переменной цикла
 			uint8_t n = get_script_digit(cmd+2);
 			if(n > VAR_CNT) break;
@@ -448,49 +489,122 @@ static uint8_t execute_cmd(char *cmd){
 			break;
 		}
 		// проверка на команду без параметров
-		if(strncmp_P(cmd, PSTR("END"), 3) == 0){
+		if(cmd_is(CMD_END)){
 			// конец скрипта
 			cmd[0] = 0;
 			status = SCRIPT_ERROR_IO;
 			break;
-		} else if(strncmp_P(cmd, PSTR("CLR"), 3) == 0){
+		} else if(cmd_is(CMD_CLR)){
 			// очистка
 			memset(pixels, 0, PIXEL_CNT * sizeof(pixel_t));
 			memset(&param, 0, sizeof(script_param_t));
 			param.bright = 0xFF;
 
-		} else if(strncmp_P(cmd, PSTR("INF"), 3) == 0){
+		} else if(cmd_is(CMD_INF)){
 			// бесконечный цикл
 			goto do_loop_cmd;
 			//status = script_seek(&script, popstack());
 			//cmd[0] = 0; // !!!! магия!!!
 			//if(status == SCRIPT_OK) pushstack(script.pos);
 
-		} else if(strncmp_P(cmd, PSTR("RST"), 3) == 0){
+		} else if(cmd_is(CMD_RST)){
 			// рестарт
 			status = script_seek(&script, 0);
 			cmd[0] = 0; // !!!! магия!!!
 
-		} else if(strncmp_P(cmd, PSTR("RPT"), 3) == 0){
+		} else if(cmd_is(CMD_RPT)){
 			// начало цикла
 			// магия указателей !!!!
 			uint32_t next = script.pos - (script.readed - (cmd - buf + 3));
 			pushstack(next);
 			//pushstack(script.pos);
 
-		} else if(strncmp_P(cmd, PSTR("PNT"), 3) == 0){
+		} else if(cmd_is(CMD_PNT)){
 			// отрисовка
 			return 1;
-		}else if(strncmp_P(cmd, PSTR("REV"), 3) == 0){
+		}else if(cmd_is(CMD_REV)){
 			// реверс
 			param.rev = !param.rev;
 
-		} else if(strncmp_P(cmd, PSTR("NEG"), 3) == 0){
+		} else if(cmd_is(CMD_RGC)){
+            // случайный глобальный цвет
+            rgb_t rgb;
+            rgb_from_hue(rand() % HSV_GRADE, &rgb);
+            for(uint8_t i=0; i<PIXEL_CNT; i++)
+                pixels[i].rgb = rgb;
+
+        } else if(cmd_is(CMD_RPC)){
+            // случайный цвет рисования
+            rgb_t rgb;
+            rgb_from_hue(rand() % HSV_GRADE, &rgb);
+            param.color = rgb;
+
+        } else if(cmd_is(CMD_NEG)){
 			// инверсия яркости
 			for(uint8_t i=0; i<PIXEL_CNT; i++)
 				pixels[i].bright ^= 0xFF;
-		}
-	} while(0);
+#if defined(INCLUDE_SHIFT_CMD)
+        } else if(cmd_is(CMD_RRC)){
+            // сдвиг цвета вправо с переносом
+            rgb_t c = pixels[PIXEL_CNT-1].rgb;
+            for(uint8_t i=PIXEL_CNT-1; i>=1; i--)
+                pixels[i].rgb = pixels[i-1].rgb;
+            pixels[0].rgb = c;
+
+        } else if(cmd_is(CMD_RLC)){
+            // сдвиг цвета влево с переносом
+            rgb_t c = pixels[0].rgb;
+            for(uint8_t i=0; i<(PIXEL_CNT-1); i++)
+                pixels[i].rgb = pixels[i+1].rgb;
+            pixels[PIXEL_CNT-1].rgb = c;
+
+        } else if(cmd_is(CMD_RRB)){
+            // сдвиг яркости вправо с переносом
+            uint8_t b = pixels[PIXEL_CNT-1].bright;
+            for(uint8_t i=PIXEL_CNT-1; i>=1; i--)
+                pixels[i].bright = pixels[i-1].bright;
+            pixels[0].bright = b;
+
+        } else if(cmd_is(CMD_RLB)){
+            // сдвиг яркости влево с переносом
+            uint8_t b = pixels[0].bright;
+            for(uint8_t i=0; i<(PIXEL_CNT-1); i++)
+                pixels[i].bright = pixels[i+1].bright;
+            pixels[PIXEL_CNT-1].bright = b;
+
+        } else if(cmd_is(CMD_SRC)){
+            // сдвиг цвета вправо
+            for(uint8_t i=PIXEL_CNT-1; i>=1; i--)
+                pixels[i].rgb = pixels[i-1].rgb;
+            pixels[0].r = 0;
+            pixels[0].g = 0;
+            pixels[0].b = 0;
+
+        } else if(cmd_is(CMD_SLC)){
+            // сдвиг цвета влево
+            for(uint8_t i=0; i<(PIXEL_CNT-1); i++)
+                pixels[i].rgb = pixels[i+1].rgb;
+            pixels[PIXEL_CNT-1].r = 0;
+            pixels[PIXEL_CNT-1].g = 0;
+            pixels[PIXEL_CNT-1].b = 0;
+
+        } else if(cmd_is(CMD_SRB)){
+            // сдвиг яркости вправо
+            for(uint8_t i=PIXEL_CNT-1; i>=1; i--)
+                pixels[i].bright = pixels[i-1].bright;
+            pixels[0].bright = 0;
+
+        } else if(cmd_is(CMD_SLB)){
+            // сдвиг яркости влево
+            for(uint8_t i=0; i<(PIXEL_CNT-1); i++)
+                pixels[i].bright = pixels[i+1].bright;
+            pixels[PIXEL_CNT-1].bright = 0;
+#endif
+        } else {
+            // отладочный вывод неопознанной команды
+            //debug_cmd(cmd);
+        }
+    } while(0);
 
 	return 0;
 }

@@ -149,6 +149,14 @@ void hsv_to_rgb(hsv_t *src, rgb_t *dst){
 	}
 }
 
+void rgb_from_hue(h_type h, rgb_t *dst) {
+    hsv_t hsv;
+    hsv.h = h;
+    hsv.s = 255;
+    hsv.v = 255;
+    hsv_to_rgb(&hsv, dst);
+}
+
 /**
  * @}
  */
